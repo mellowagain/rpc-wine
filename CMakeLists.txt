@@ -33,6 +33,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -s")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 
+find_package(RapidJSON)
+include_directories(${RAPIDJSON_INCLUDE_DIRS})
+
 #include_directories(.)
 #add_definitions(discord-rpc.spec)
 add_library(rpc_wine SHARED ${SRC})

@@ -26,12 +26,20 @@ namespace rpc_wine::serialization {
     public:
         static const bool kNeedFree = false;
 
-        char fixed_buffer[size];
+        char fixed_buffer[size] {};
 
-        fixed_linear_allocator();
+        fixed_linear_allocator() : linear_allocator(this->fixed_buffer, size) {
+            // Initialized in initializer list
+        }
 
-        static void free(void *ptr);
-        static void Free(void *ptr);
+        void *Realloc(void *original_ptr, size_t original_size, size_t new_size) {
+            return realloc(original_ptr, original_size, new_size);
+        }
+
+        static void Free(void *ptr) {
+            free(ptr);
+        }
+
     };
 
 }

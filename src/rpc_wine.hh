@@ -1,7 +1,9 @@
 #ifndef RPC_WINE_RPC_WINE_HH
 #define RPC_WINE_RPC_WINE_HH
 
-#include "discord_defs.hh"
+#include "common/discord_defs.hh"
+
+using namespace rpc_wine;
 
 extern "C" { // Prevent mangle of function names (Wine can't find them if mangled by C++ compiler)
 

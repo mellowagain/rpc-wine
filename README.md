@@ -4,6 +4,10 @@ Making Discord RPC actually _rich_ by adding support for Wine.
 This is achieved by creating a Wine DLL which overrides the original
 `discord-rpc.dll` file.
 
+## Dependencies
+
+* [RapidJson](http://rapidjson.org/)
+
 ## Installation
 
 A pre-compiled binary can be downloaded from the [Releases](https://github.com/Marc3842h/rpc-wine/releases)

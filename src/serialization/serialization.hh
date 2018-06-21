@@ -1,10 +1,10 @@
 #ifndef RPC_WINE_SERIALIZATION_HH
 #define RPC_WINE_SERIALIZATION_HH
 
+#include <functional>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include <functional>
 
 #include "allocators.hh"
 
@@ -64,11 +64,11 @@ namespace rpc_wine::serialization {
         json_document();
     };
 
-    inline json_value *get_object_member(json_value *object, const char *name);
+    json_value *get_object_member(json_value *object, const char *name);
 
-    inline int get_int_member(json_value *object, const char *name, int not_found_default = 0);
+    int get_int_member(json_value *object, const char *name, int not_found_default = 0);
 
-    inline const char *get_string_member(json_value *object, const char *name, const char *not_found_default = nullptr);
+    const char *get_string_member(json_value *object, const char *name, const char *not_found_default = nullptr);
 
 }
 

@@ -1,5 +1,4 @@
 #include "writers.hh"
-#include "../utils/utils.hh"
 
 rpc_wine::serialization::write_object::write_object(rpc_wine::serialization::json_writer &writer) : writer(writer) {
     // Initialized in initializer list
@@ -40,11 +39,7 @@ void rpc_wine::serialization::write_optional_string(rpc_wine::serialization::jso
 
 void rpc_wine::serialization::write_nonce(rpc_wine::serialization::json_writer &writer, int nonce) {
     write_key(writer, "NONCE");
-
-    char buffer[32];
-    utils::number_to_string(buffer, nonce);
-
-    writer.String(buffer);
+    writer.String(std::to_string(nonce).c_str());
 }
 
 size_t rpc_wine::serialization::write_rich_presence(char *destination, size_t max_length, int nonce, int pid, const discord_rich_presence *presence) {

@@ -36,18 +36,3 @@ void rpc_wine::serialization::linear_allocator::free(void *ptr) {
     // Here again wtf?!
     (void) ptr;
 }
-
-template <size_t size>
-rpc_wine::serialization::fixed_linear_allocator<size>::fixed_linear_allocator() : linear_allocator(this->fixed_buffer, size) {
-    // Initialized in initializer list
-}
-
-template<size_t size>
-void rpc_wine::serialization::fixed_linear_allocator<size>::free(void *ptr) {
-    // TODO: Unimplemented stub free
-}
-
-template<size_t size>
-void rpc_wine::serialization::fixed_linear_allocator<size>::Free(void *ptr) {
-    free(ptr);
-}

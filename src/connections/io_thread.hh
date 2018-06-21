@@ -18,7 +18,6 @@ public:
     void start();
     void stop();
     void notify();
-
 };
 
 #endif //RPC_WINE_IO_THREAD_HH

@@ -5,8 +5,8 @@
 #include <pwd.h>
 #include <unistd.h>
 
+#include "../utils/utils.hh"
 #include "rpc_register.hh"
-#include "utils.hh"
 
 // Add a desktop file and update some mime handlers so that xdg-open does the right thing.
 void rpc_wine::register_app(const char *app_id, const char *cmd) {
@@ -45,15 +45,15 @@ void rpc_wine::register_app(const char *app_id, const char *cmd) {
 
     char desktop_file_path[PATH_MAX];
     snprintf(desktop_file_path, sizeof(desktop_file_path), "%s/.local", home_dir);
-    if (utils::create_dir(desktop_file_path))
+    if (!utils::create_dir(desktop_file_path))
         return;
 
     strcat(desktop_file_path, "/share");
-    if (utils::create_dir(desktop_file_path))
+    if (!utils::create_dir(desktop_file_path))
         return;
 
     strcat(desktop_file_path, "/applications");
-    if (utils::create_dir(desktop_file_path))
+    if (!utils::create_dir(desktop_file_path))
         return;
 
     strcat(desktop_file_path, desktop_file_name);
