@@ -54,6 +54,21 @@ cd /tmp/discord-rpc
 # Create required build files
 if [ ${_32bit} == "true" ]; then
     winemaker --dll --wine32 --nobanner --nomfc --nomsvcrt --nosource-fix -lpthread .
+
+    # Workaround bug that "-m32" won't get correctly added to Makefile
+    # even thought we passed "--wine32" with winemaker.
+    cextra_line=$(grep -n -m 1 "CEXTRA" "/tmp/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')
+    cxxextra_line=$(grep -n -m 1 "CXXEXTRA" "/tmp/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')
+    ldflags_line=$(grep -n -m 1 "discord_rpc_dll_LDFLAGS" "/tmp/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')
+    ldflags_line=$((ldflags_line + 1))
+
+    cextra_line="$cextra_line"s
+    cxxextra_line="$cxxextra_line"s
+    ldflags_line="$ldflags_line"s
+
+    sed -i "$cextra_line/$/ -m32/" "/tmp/discord-rpc/Makefile"
+    sed -i "$cxxextra_line/$/ -m32/" "/tmp/discord-rpc/Makefile"
+    sed -i "$ldflags_line/$/ -m32/" "/tmp/discord-rpc/Makefile"
 else
     winemaker --dll --nobanner --nomfc --nomsvcrt --nosource-fix -lpthread .
 fi

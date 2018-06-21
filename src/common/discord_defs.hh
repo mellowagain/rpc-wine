@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 // Common definitions from Discord RPC
 
@@ -68,7 +69,7 @@ namespace rpc_wine {
     };
 
     struct message_frame : public message_frame_header {
-        char message[rpc_wine::max_frame_size - sizeof(message_frame_header)];
+        char message[max_frame_size - sizeof(message_frame_header)];
     };
 
     enum class connection_state : uint32_t {
@@ -76,6 +77,18 @@ namespace rpc_wine {
         SENT_HANDSHAKE = 1,
         AWAITING_RESPONSE = 2,
         CONNECTED = 3
+    };
+
+    struct queued_message {
+        size_t length;
+        char buffer[16 * 1024];
+
+        void copy(const queued_message &other) {
+            this->length = other.length;
+
+            if (this->length != 0)
+                memcpy(this->buffer, other.buffer, this->length);
+        }
     };
 
 }

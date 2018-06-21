@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "common/message_queue.hh"
 #include "common/rpc_register.hh"
 #include "connections/io_thread.hh"
 #include "connections/rpc_connection.hh"
@@ -17,15 +18,29 @@ static std::atomic_bool was_just_connected { false };
 static std::atomic_bool was_just_disconnected { false };
 static std::atomic_bool got_error_message { false };
 
+static std::atomic_bool was_join_game { false };
+static std::atomic_bool was_spectate_game { false };
+
+static char join_game_secret[256];
+static char spectate_game_secret[256];
+
 static io_thread_holder *io_thread = nullptr;
 static backoff reconnect_time_ms(500, 60 * 1000);
 static auto next_reconnect = std::chrono::system_clock::now();
 static pid_t process_id = 0;
 static int nonce = 0;
 
+static queued_message queued_presence {};
+static message_queue<queued_message, 8> send_queue;
+static message_queue<discord_user, 8> join_ask_queue;
+
+static int last_error_code = 0;
+static char last_error_message[256];
+
 static int last_disconnect_error_code = 0;
 static char last_disconnect_error_message[256];
 
+static std::mutex presence_mutex;
 static std::mutex handler_mutex;
 
 static discord_user connected_user;
@@ -35,10 +50,14 @@ extern "C" { // Prevent mangle of function names (Wine can't find them if mangle
 // Discord Rich Presence API - discord_rpc.h
 
 void rpcw_clear_presence() {
+    printf("== ! == rpcw_clear_presence called\n");
+
     // TODO: Unimplemented stub Discord_ClearPresence
 }
 
 void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int auto_register, const char *steam_id) {
+    printf("== ! == rpcw_initialize called\n");
+
     io_thread = new io_thread_holder();
     if (io_thread == nullptr)
         return;
@@ -119,38 +138,113 @@ void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int a
 }
 
 void rpcw_respond(const char *user_id, int reply) {
-    printf("\n\nRPCWine_Respond called\n");
-    printf("Param: %s, %i\n\n", user_id, reply);
+    printf("== ! == rpcw_respond called\n");
 }
 
 void rpcw_run_callbacks() {
-    printf("\n\nRPCWine_RunCallbacks called\n\n");
+    printf("== ! == rpcw_run_callbacks called\n");
+
+    if (rpc_connection == nullptr)
+        return;
+
+    bool was_disconnected = was_just_disconnected.exchange(false);
+    bool is_connected = rpc_connection->is_connected();
+
+    if (is_connected) {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+
+        if (was_disconnected && global_handlers.disconnected != nullptr)
+            global_handlers.disconnected(last_disconnect_error_code, last_disconnect_error_message);
+    }
+
+    if (was_just_connected.exchange(false)) {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+
+        if (global_handlers.ready != nullptr) {
+            discord_user user { connected_user.user_id, connected_user.username, connected_user.discrim, connected_user.avatar };
+            global_handlers.ready(&user);
+        }
+    }
+
+    if (got_error_message.exchange(false)) {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+
+        if (global_handlers.errored != nullptr)
+            global_handlers.errored(last_error_code, last_error_message);
+    }
+
+    if (was_join_game.exchange(false)) {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+
+        if (global_handlers.join_game != nullptr)
+            global_handlers.join_game(join_game_secret);
+    }
+
+    if (was_spectate_game.exchange(false)) {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+
+        if (global_handlers.spectate_game != nullptr)
+            global_handlers.spectate_game(spectate_game_secret);
+    }
+
+    if (join_ask_queue.has_pending_sends()) {
+        auto request = join_ask_queue.get_next_send_message();
+
+        {
+            std::lock_guard<std::mutex> guard(handler_mutex);
+
+            if (global_handlers.join_request != nullptr) {
+                discord_user user { request->user_id, request->username, request->discrim, request->avatar };
+                global_handlers.join_request(&user);
+            }
+        }
+
+        join_ask_queue.commit_send();
+    }
+
+    if (!is_connected) {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+
+        if (was_disconnected && global_handlers.disconnected != nullptr)
+            global_handlers.disconnected(last_disconnect_error_code, last_disconnect_error_message);
+    }
 }
 
 void rpcw_shutdown() {
-    printf("\n\nRPCWine_Shutdown called\n\n");
+    printf("== ! == rpcw_shutdown called\n");
 }
 
 void rpcw_update_connection() {
+    printf("== ! == rpcw_update_connection called\n");
     // TODO: Unimplemented stub Discord_UpdateConnection
 }
 
 void rpcw_update_handlers(discord_event_handlers *handlers) {
+    printf("== ! == rpcw_update_handlers called\n");
     // TODO: Unimplemented stub Discord_UpdateHandlers
 }
 
 void rpcw_update_presence(const discord_rich_presence *presence) {
-    printf("\n\nRPCWine_UpdatePresence called\n");
-    printf("Arguments: %p\n\n", &presence);
+    printf("== ! == rpcw_update_presence called\n= Values:");
+
+    printf("= state: %s - details: %s - start: %ld - end: %ld - instance: %i\n", presence->state, presence->details, (long)presence->start_timestamp, (long)presence->end_timestamp, presence->instance);
+    printf("= party id: %s - party size: %i - party max: %i\n", presence->party_id, presence->party_size, presence->party_max);
+    printf("= match secret: %s - join secret: %s - spectate secret: %s\n", presence->match_secret, presence->join_secret, presence->spectate_secret);
+    printf("= large img: %s, large img text: %s\n", presence->large_image_key, presence->large_image_text);
+    printf("= small img: %s, small img text: %s\n", presence->small_image_key, presence->small_image_text);
+
+    printf("=\n");
 }
 
 // Discord Register API - discord_register.h
 
 void rpcw_register(const char *app_id, const char *cmd) {
+    printf("== ! == rpcw_register called\n");
     rpc_wine::register_app(app_id, cmd);
 }
 
 void rpcw_register_steam_game(const char *app_id, const char *steam_id) {
+    printf("== ! == rpcw_register_steam_game called\n");
     rpc_wine::register_steam_game(app_id, steam_id);
 }
 
