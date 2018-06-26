@@ -1,0 +1,34 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/rpc-wine
+    docker:
+      - image: ubuntu:latest
+    steps:
+      - checkout
+      - run:
+          name: Add Wine repository
+          command: |
+            apt-get update -qq
+            apt-get install -y wget gnupg2 software-properties-common
+            dpkg --add-architecture i386
+            wget -nc https://dl.winehq.org/wine-builds/Release.key
+            apt-key add Release.key
+            apt-add-repository -y https://dl.winehq.org/wine-builds/ubuntu/
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update -qq
+            apt-get install -y build-essential cmake git ssh gcc-multilib g++-multilib rapidjson-dev
+            apt-get install -y --install-recommends winehq-devel
+      - run:
+          name: Build RPC-Wine
+          command: |
+            chmod +x build.sh
+            ./build.sh -s32
+      - store_artifacts:
+          path: ~/rpc-wine/bin32/discord-rpc.dll.so
+          destination: bin32/discord-rpc.dll.so
+      - store_artifacts:
+          path: ~/rpc-wine/bin64/discord-rpc.dll.so
+          destination: bin64/discord-rpc.dll.so
