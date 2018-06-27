@@ -7,6 +7,7 @@
 #include "connections/io_thread.hh"
 #include "connections/rpc_connection.hh"
 #include "rpc_wine.hh"
+#include "serialization/writers.hh"
 #include "utils/backoff.hh"
 
 static connection *rpc_connection = nullptr;
@@ -51,8 +52,7 @@ extern "C" { // Prevent mangle of function names (Wine can't find them if mangle
 
 void rpcw_clear_presence() {
     printf("== ! == rpcw_clear_presence called\n");
-
-    // TODO: Unimplemented stub Discord_ClearPresence
+    rpcw_update_presence(nullptr);
 }
 
 void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int auto_register, const char *steam_id) {
@@ -225,7 +225,8 @@ void rpcw_update_handlers(discord_event_handlers *handlers) {
 }
 
 void rpcw_update_presence(const discord_rich_presence *presence) {
-    printf("== ! == rpcw_update_presence called\n= Values:");
+    printf("== ! == rpcw_update_presence called");
+    printf("= Values:\n");
 
     printf("= state: %s - details: %s - start: %ld - end: %ld - instance: %i\n", presence->state, presence->details, (long)presence->start_timestamp, (long)presence->end_timestamp, presence->instance);
     printf("= party id: %s - party size: %i - party max: %i\n", presence->party_id, presence->party_size, presence->party_max);
@@ -234,6 +235,15 @@ void rpcw_update_presence(const discord_rich_presence *presence) {
     printf("= small img: %s, small img text: %s\n", presence->small_image_key, presence->small_image_text);
 
     printf("=\n");
+
+    std::lock_guard<std::mutex> guard(presence_mutex);
+
+    queued_presence.length = serialization::write_rich_presence(
+            queued_presence.buffer, sizeof(queued_presence.buffer), nonce++, process_id, presence
+    );
+
+    if (io_thread != nullptr)
+        io_thread->notify();
 }
 
 // Discord Register API - discord_register.h
