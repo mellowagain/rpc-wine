@@ -51,7 +51,7 @@ extern "C" { // Prevent mangle of function names (Wine can't find them if mangle
 // Discord Rich Presence API - discord_rpc.h
 
 void rpcw_clear_presence() {
-    printf("== ! == rpcw_clear_presence called\n");
+    //printf("== ! == rpcw_clear_presence called\n");
     rpcw_update_presence(nullptr);
 }
 
@@ -138,11 +138,26 @@ void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int a
 }
 
 void rpcw_respond(const char *user_id, int reply) {
-    printf("== ! == rpcw_respond called\n");
+    //printf("== ! == rpcw_respond called\n");
+
+    if (rpc_connection == nullptr || !rpc_connection->is_connected())
+        return;
+
+    queued_message *queued_msg = send_queue.get_next_add_message();
+
+    if (queued_msg != nullptr) {
+        queued_msg->length = serialization::write_join_reply(
+                queued_msg->buffer, sizeof(queued_msg->buffer), user_id, reply, nonce++
+        );
+        send_queue.commit_add();
+
+        if (io_thread != nullptr)
+            io_thread->notify();
+    }
 }
 
 void rpcw_run_callbacks() {
-    printf("== ! == rpcw_run_callbacks called\n");
+    //printf("== ! == rpcw_run_callbacks called\n");
 
     if (rpc_connection == nullptr)
         return;
@@ -211,30 +226,21 @@ void rpcw_run_callbacks() {
 }
 
 void rpcw_shutdown() {
-    printf("== ! == rpcw_shutdown called\n");
+    //printf("== ! == rpcw_shutdown called\n");
 }
 
 void rpcw_update_connection() {
-    printf("== ! == rpcw_update_connection called\n");
+    //printf("== ! == rpcw_update_connection called\n");
     // TODO: Unimplemented stub Discord_UpdateConnection
 }
 
 void rpcw_update_handlers(discord_event_handlers *handlers) {
-    printf("== ! == rpcw_update_handlers called\n");
+    //printf("== ! == rpcw_update_handlers called\n");
     // TODO: Unimplemented stub Discord_UpdateHandlers
 }
 
 void rpcw_update_presence(const discord_rich_presence *presence) {
-    printf("== ! == rpcw_update_presence called");
-    printf("= Values:\n");
-
-    printf("= state: %s - details: %s - start: %ld - end: %ld - instance: %i\n", presence->state, presence->details, (long)presence->start_timestamp, (long)presence->end_timestamp, presence->instance);
-    printf("= party id: %s - party size: %i - party max: %i\n", presence->party_id, presence->party_size, presence->party_max);
-    printf("= match secret: %s - join secret: %s - spectate secret: %s\n", presence->match_secret, presence->join_secret, presence->spectate_secret);
-    printf("= large img: %s, large img text: %s\n", presence->large_image_key, presence->large_image_text);
-    printf("= small img: %s, small img text: %s\n", presence->small_image_key, presence->small_image_text);
-
-    printf("=\n");
+    //printf("== ! == rpcw_update_presence called");
 
     std::lock_guard<std::mutex> guard(presence_mutex);
 

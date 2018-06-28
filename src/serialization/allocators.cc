@@ -19,20 +19,13 @@ void *rpc_wine::serialization::linear_allocator::malloc(size_t size) {
     return response;
 }
 
-void *rpc_wine::serialization::linear_allocator::realloc(void *original_ptr, size_t original_size, size_t new_size) {
+void *rpc_wine::serialization::linear_allocator::realloc(void*, size_t, size_t new_size) {
     if (new_size == 0)
         return nullptr;
-
-    assert(original_ptr != nullptr && original_size != 0);
-
-    // I don't know what the fuck is going on with Discord
-    (void) original_ptr;
-    (void) original_size;
 
     return this->malloc(new_size);
 }
 
-void rpc_wine::serialization::linear_allocator::free(void *ptr) {
-    // Here again wtf?!
-    (void) ptr;
+void rpc_wine::serialization::linear_allocator::free(void*) {
+    // Will never be called because kNeedFree is false
 }

@@ -17,8 +17,8 @@ namespace rpc_wine::serialization {
         linear_allocator(char *buffer, size_t size);
 
         void *malloc(size_t size);
-        void *realloc(void *original_ptr, size_t original_size, size_t new_size);
-        static void free(void *ptr);
+        void *realloc(void*, size_t, size_t new_size);
+        static void free(void*);
     };
 
     template <size_t size>
