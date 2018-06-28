@@ -350,9 +350,68 @@ void rpcw_update_connection() {
     }
 }
 
+inline bool register_event_handler(const char *event_name) {
+    queued_message *message = send_queue.get_next_add_message();
+
+    if (message != nullptr) {
+        message->length = serialization::write_subscribe(
+                message->buffer, sizeof(message->buffer), nonce++, event_name
+        );
+
+        send_queue.commit_add();
+
+        if (io_thread != nullptr)
+            io_thread->notify();
+
+        return true;
+    }
+
+    return false;
+}
+
+inline bool unregister_event_handler(const char *event_name) {
+    queued_message *message = send_queue.get_next_add_message();
+
+    if (message != nullptr) {
+        message->length = serialization::write_unsubscribe(
+                message->buffer, sizeof(message->buffer), nonce++, event_name
+        );
+
+        send_queue.commit_add();
+
+        if (io_thread != nullptr)
+            io_thread->notify();
+
+        return true;
+    }
+
+    return false;
+}
+
 void rpcw_update_handlers(discord_event_handlers *handlers) {
     //printf("== ! == rpcw_update_handlers called\n");
-    // TODO: Unimplemented stub Discord_UpdateHandlers
+
+    #define HANDLE_EVENT_REGISTRATION(handler_name, event)                                          \
+    if (global_handlers.handler_name == nullptr && handlers->handler_name != nullptr) {             \
+        register_event_handler(event);                                                              \
+    } else if (global_handlers.handler_name != nullptr && handlers->handler_name == nullptr) {      \
+        unregister_event_handler(event);                                                            \
+    }                                                                                               \
+
+    if (handlers != nullptr) {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+
+        HANDLE_EVENT_REGISTRATION(join_game, "ACTIVITY_JOIN");
+        HANDLE_EVENT_REGISTRATION(spectate_game, "ACTIVITY_SPECTATE");
+        HANDLE_EVENT_REGISTRATION(join_request, "ACTIVITY_JOIN_REQUEST");
+
+        global_handlers = *handlers;
+    } else {
+        std::lock_guard<std::mutex> guard(handler_mutex);
+        global_handlers = {};
+    }
+
+    #undef HANDLE_EVENT_REGISTRATION
 }
 
 void rpcw_update_presence(const discord_rich_presence *presence) {
