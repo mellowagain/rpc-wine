@@ -227,6 +227,21 @@ void rpcw_run_callbacks() {
 
 void rpcw_shutdown() {
     //printf("== ! == rpcw_shutdown called\n");
+
+    if (rpc_connection == nullptr)
+        return;
+
+    rpc_connection->on_connect = nullptr;
+    rpc_connection->on_disconnect = nullptr;
+
+    global_handlers = {};
+
+    if (io_thread != nullptr) {
+        io_thread->stop();
+        delete io_thread;
+    }
+
+    connection::destroy(rpc_connection);
 }
 
 void rpcw_update_connection() {
