@@ -246,7 +246,108 @@ void rpcw_shutdown() {
 
 void rpcw_update_connection() {
     //printf("== ! == rpcw_update_connection called\n");
-    // TODO: Unimplemented stub Discord_UpdateConnection
+
+    if (rpc_connection == nullptr)
+        return;
+
+    if (!rpc_connection->is_connected()) {
+        if (std::chrono::system_clock::now() >= next_reconnect) {
+            next_reconnect = std::chrono::system_clock::now() + std::chrono::duration<int64_t, std::milli>{ reconnect_time_ms.next_delay() };
+            rpc_connection->open_connection();
+        }
+
+        return;
+    }
+
+    while (true) {
+        serialization::json_document message;
+
+        if (!rpc_connection->read(message))
+            break;
+
+        const char *event = serialization::get_string_member(&message, "evt");
+        const char *nonce = serialization::get_string_member(&message, "nonce");
+
+        if (nonce == nullptr) {
+            if (event == nullptr)
+                continue;
+
+            serialization::json_value *data = serialization::get_object_member(&message, "data");
+
+            if (strcmp(event, "ACTIVITY_JOIN") == 0) {
+                const char *secret = serialization::get_string_member(data, "secret");
+
+                if (secret != nullptr) {
+                    strcpy(join_game_secret, secret);
+                    was_join_game.store(true);
+                }
+            } else if (strcmp(event, "ACTIVITY_SPECTATE") == 0) {
+                const char *secret = serialization::get_string_member(data, "secret");
+
+                if (secret != nullptr) {
+                    strcpy(spectate_game_secret, secret);
+                    was_spectate_game.store(true);
+                }
+            } else if (strcmp(event, "ACTIVITY_JOIN_REQUEST") == 0) {
+                serialization::json_value *user = serialization::get_object_member(data, "user");
+
+                const char *user_id = serialization::get_string_member(user, "id");
+                const char *username = serialization::get_string_member(user, "username");
+                const char *avatar = serialization::get_string_member(user, "avatar");
+
+                discord_user *request = join_ask_queue.get_next_add_message();
+
+                if (user_id != nullptr && username != nullptr && request != nullptr) {
+                    strcpy(request->user_id, user_id);
+                    strcpy(request->username, username);
+
+                    const char *discrim = serialization::get_string_member(user, "discriminator");
+                    if (discrim != nullptr)
+                        strcpy(request->discrim, discrim);
+
+                    if (avatar != nullptr) {
+                        strcpy(request->avatar, avatar);
+                    } else {
+                        request->avatar[0] = 0;
+                    }
+
+                    join_ask_queue.commit_add();
+                }
+            }
+        } else {
+            // This is only sent with responses to our payloads
+
+            if (event != nullptr && strcmp(event, "ERROR") == 0) {
+                serialization::json_value *data = serialization::get_object_member(&message, "data");
+
+                last_error_code = serialization::get_int_member(data, "code");
+                strcpy(last_error_message, serialization::get_string_member(data, "message", ""));
+
+                got_error_message.store(true);
+            }
+        }
+    }
+
+    if (queued_presence.length != 0) {
+        queued_message local_queued_presence {};
+
+        {
+            std::lock_guard<std::mutex> guard(presence_mutex);
+            local_queued_presence.copy(queued_presence);
+            queued_presence.length = 0;
+        }
+
+        if (!rpc_connection->write(local_queued_presence.buffer, local_queued_presence.length)) {
+            std::lock_guard<std::mutex> guard(presence_mutex);
+            queued_presence.copy(local_queued_presence);
+        }
+    }
+
+    while (send_queue.has_pending_sends()) {
+        queued_message *message = send_queue.get_next_send_message();
+        rpc_connection->write(message->buffer, message->length);
+        send_queue.commit_send();
+    }
 }
 
 void rpcw_update_handlers(discord_event_handlers *handlers) {
