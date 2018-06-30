@@ -51,13 +51,10 @@ extern "C" { // Prevent mangle of function names (Wine can't find them if mangle
 // Discord Rich Presence API - discord_rpc.h
 
 void rpcw_clear_presence() {
-    //printf("== ! == rpcw_clear_presence called\n");
     rpcw_update_presence(nullptr);
 }
 
 void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int auto_register, const char *steam_id) {
-    printf("== ! == rpcw_initialize called\n");
-
     io_thread = new io_thread_holder();
     if (io_thread == nullptr)
         return;
@@ -138,8 +135,6 @@ void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int a
 }
 
 void rpcw_respond(const char *user_id, int reply) {
-    //printf("== ! == rpcw_respond called\n");
-
     if (rpc_connection == nullptr || !rpc_connection->is_connected())
         return;
 
@@ -157,8 +152,6 @@ void rpcw_respond(const char *user_id, int reply) {
 }
 
 void rpcw_run_callbacks() {
-    //printf("== ! == rpcw_run_callbacks called\n");
-
     if (rpc_connection == nullptr)
         return;
 
@@ -226,8 +219,6 @@ void rpcw_run_callbacks() {
 }
 
 void rpcw_shutdown() {
-    //printf("== ! == rpcw_shutdown called\n");
-
     if (rpc_connection == nullptr)
         return;
 
@@ -245,8 +236,6 @@ void rpcw_shutdown() {
 }
 
 void rpcw_update_connection() {
-    //printf("== ! == rpcw_update_connection called\n");
-
     if (rpc_connection == nullptr)
         return;
 
@@ -316,7 +305,6 @@ void rpcw_update_connection() {
             }
         } else {
             // This is only sent with responses to our payloads
-
             if (event != nullptr && strcmp(event, "ERROR") == 0) {
                 serialization::json_value *data = serialization::get_object_member(&message, "data");
 
@@ -389,8 +377,6 @@ inline bool unregister_event_handler(const char *event_name) {
 }
 
 void rpcw_update_handlers(discord_event_handlers *handlers) {
-    //printf("== ! == rpcw_update_handlers called\n");
-
     #define HANDLE_EVENT_REGISTRATION(handler_name, event)                                          \
     if (global_handlers.handler_name == nullptr && handlers->handler_name != nullptr) {             \
         register_event_handler(event);                                                              \
@@ -415,8 +401,6 @@ void rpcw_update_handlers(discord_event_handlers *handlers) {
 }
 
 void rpcw_update_presence(const discord_rich_presence *presence) {
-    //printf("== ! == rpcw_update_presence called");
-
     std::lock_guard<std::mutex> guard(presence_mutex);
 
     queued_presence.length = serialization::write_rich_presence(
@@ -430,12 +414,10 @@ void rpcw_update_presence(const discord_rich_presence *presence) {
 // Discord Register API - discord_register.h
 
 void rpcw_register(const char *app_id, const char *cmd) {
-    printf("== ! == rpcw_register called\n");
     rpc_wine::register_app(app_id, cmd);
 }
 
 void rpcw_register_steam_game(const char *app_id, const char *steam_id) {
-    printf("== ! == rpcw_register_steam_game called\n");
     rpc_wine::register_steam_game(app_id, steam_id);
 }
 

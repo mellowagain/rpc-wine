@@ -120,8 +120,6 @@ size_t rpc_wine::serialization::write_rich_presence(char *destination, size_t ma
         }
     }
 
-    //printf("\nResult: %s\n\n", destination);
-
     return writer.size();
 }
 

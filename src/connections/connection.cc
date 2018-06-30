@@ -46,7 +46,7 @@ bool rpc_wine::base_connection::open_connection() {
     fcntl(this->socket_connection, F_SETFL, O_NONBLOCK);
 
     for (unsigned int i = 0; i < 10; ++i) {
-        snprintf(pipe_address.sun_path, sizeof(pipe_address.sun_path), "%s/discord-rpc-%d", tmp_path, i);
+        snprintf(pipe_address.sun_path, sizeof(pipe_address.sun_path), "%s/discord-ipc-%d", tmp_path, i);
 
         int return_value = connect(this->socket_connection, (const sockaddr*) &pipe_address, sizeof(pipe_address));
         if (return_value == 0) {
