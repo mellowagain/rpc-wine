@@ -74,14 +74,18 @@ build_32bit() {
 
     # Workaround bug that "-m32" won't get correctly added to Makefile
     # even thought we passed "--wine32" with winemaker.
-    cextra_line=$(grep -n -m 1 "CEXTRA" "/tmp/discord-rpc/32bit/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')s
-    cxxextra_line=$(grep -n -m 1 "CXXEXTRA" "/tmp/discord-rpc/32bit/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')s
-    ldflags_line=$(grep -n -m 1 "LDFLAGS" "/tmp/discord-rpc/32bit/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')
-    ldflags_line=$((ldflags_line + 1))s
+    if ! grep -q "m32" "/tmp/discord-rpc/32bit/discord-rpc/Makefile"; then
+        echo "Detected Wine failing to add 32-bit flags, fixing..."
 
-    sed -i "$cextra_line/$/ -m32/" "/tmp/discord-rpc/32bit/discord-rpc/Makefile"
-    sed -i "$cxxextra_line/$/ -m32/" "/tmp/discord-rpc/32bit/discord-rpc/Makefile"
-    sed -i "$ldflags_line/$/ -m32/" "/tmp/discord-rpc/32bit/discord-rpc/Makefile"
+        cextra_line=$(grep -n -m 1 "CEXTRA" "/tmp/discord-rpc/32bit/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')s
+        cxxextra_line=$(grep -n -m 1 "CXXEXTRA" "/tmp/discord-rpc/32bit/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')s
+        ldflags_line=$(grep -n -m 1 "LDFLAGS" "/tmp/discord-rpc/32bit/discord-rpc/Makefile" | sed 's/\([0-9]*\).*/\1/')
+        ldflags_line=$((ldflags_line + 1))s
+
+        sed -i "$cextra_line/$/ -m32/" "/tmp/discord-rpc/32bit/discord-rpc/Makefile"
+        sed -i "$cxxextra_line/$/ -m32/" "/tmp/discord-rpc/32bit/discord-rpc/Makefile"
+        sed -i "$ldflags_line/$/ -m32/" "/tmp/discord-rpc/32bit/discord-rpc/Makefile"
+    fi
 
     # The command below will fail so don't exit out if that happens
     set +e
