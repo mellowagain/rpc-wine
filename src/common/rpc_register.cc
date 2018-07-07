@@ -1,12 +1,19 @@
 #include <climits>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cwchar>
 #include <pwd.h>
 #include <unistd.h>
 
 #include "../utils/utils.hh"
 #include "rpc_register.hh"
+
+#if defined(__WINE__)
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+#endif
 
 // Add a desktop file and update some mime handlers so that xdg-open does the right thing.
 void rpc_wine::register_app(const char *app_id, const char *cmd) {
@@ -20,11 +27,23 @@ void rpc_wine::register_app(const char *app_id, const char *cmd) {
     }
 
     if (cmd == nullptr || !cmd[0]) {
-        char game_path[PATH_MAX];
-        if (readlink("/proc/self/exe", game_path, sizeof(game_path)) <= 0)
-            return;
+        #if defined(__WINE__)
+            wchar_t game_path[PATH_MAX];
 
-        cmd = game_path;
+            unsigned int length = GetModuleFileNameW(nullptr, game_path, sizeof(game_path));
+            if (length == 0)
+                return;
+
+            char *buffer;
+            wcstombs(buffer, game_path, wcslen(game_path));
+            cmd = buffer;
+        #else
+            char game_path[PATH_MAX];
+            if (readlink("/proc/self/exe", game_path, sizeof(game_path)) <= 0)
+                return;
+
+            cmd = game_path;
+        #endif
     }
 
     const char *desktop_file_format = "[Desktop Entry]\n"
