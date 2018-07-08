@@ -14,7 +14,7 @@ rpc_wine::connection *rpc_wine::connection::create(const char *app_id) {
 void rpc_wine::connection::destroy(rpc_wine::connection *&connection) {
     connection->close_connection();
     base_connection::destroy(connection->connection);
-    delete connection;
+    connection = nullptr;
 }
 
 void rpc_wine::connection::open_connection() {

@@ -38,7 +38,7 @@ void rpc_wine::serialization::write_optional_string(rpc_wine::serialization::jso
 }
 
 void rpc_wine::serialization::write_nonce(rpc_wine::serialization::json_writer &writer, int nonce) {
-    write_key(writer, "NONCE");
+    write_key(writer, "nonce");
     writer.String(std::to_string(nonce).c_str());
 }
 

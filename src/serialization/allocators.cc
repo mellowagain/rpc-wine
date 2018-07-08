@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "allocators.hh"
 
 rpc_wine::serialization::linear_allocator::linear_allocator(char *buffer, size_t size) {

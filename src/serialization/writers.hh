@@ -1,8 +1,8 @@
 #ifndef RPC_WINE_WRITERS_HH
 #define RPC_WINE_WRITERS_HH
 
-#include "serialization.hh"
 #include "../common/discord_defs.hh"
+#include "serialization.hh"
 
 namespace rpc_wine::serialization {
 

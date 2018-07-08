@@ -94,7 +94,7 @@ void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int a
     rpc_connection->on_connect = [](serialization::json_document &message) {
         rpcw_update_handlers(&queued_handlers);
 
-        memset(&connected_user, 0, sizeof(discord_user));
+        memset(&connected_user, 0, sizeof(connected_user));
 
         auto data = serialization::get_object_member(&message, "data");
         auto user = serialization::get_object_member(data, "user");
@@ -103,6 +103,12 @@ void rpcw_initialize(const char *app_id, discord_event_handlers *handlers, int a
         const char *username = serialization::get_string_member(user, "username");
 
         if (user_id != nullptr && username != nullptr) {
+            // This is pretty ghetto
+            connected_user.user_id = (char*) malloc(64);
+            connected_user.username = (char*) malloc(32);
+            connected_user.discrim = (char*) malloc(8);
+            connected_user.avatar = (char*) malloc(256);
+
             strcpy(connected_user.user_id, user_id);
             strcpy(connected_user.username, username);
 

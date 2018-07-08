@@ -20,7 +20,7 @@ rpc_wine::base_connection *rpc_wine::base_connection::create() {
 
 void rpc_wine::base_connection::destroy(rpc_wine::base_connection *&connection) {
     connection->close_connection();
-    delete connection;
+    connection = nullptr;
 }
 
 bool rpc_wine::base_connection::open_connection() {
