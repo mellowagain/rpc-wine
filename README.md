@@ -5,7 +5,12 @@ with your native Discord instance.
 
 ## Installation
 
-Installation of this library can be done with a few simple steps.
+Some users have provided distro packages for this library:
+
+* Arch Linux: [`discord-rpc-wine-git`](https://aur.archlinux.org/packages/discord-rpc-wine-git/) by @999eagle
+
+If your distro isn't listed above, the library can still
+be installed with a few simple steps.
 
 #### Dependencies
 
