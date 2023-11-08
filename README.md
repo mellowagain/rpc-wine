@@ -1,4 +1,4 @@
-# RPC Wine [![CI](https://img.shields.io/circleci/project/github/Marc3842h/rpc-wine.svg)](https://circleci.com/gh/Marc3842h/rpc-wine)
+# RPC Wine
 
 `discord-rpc.dll` implementation for Wine allowing your Wine games to interact
 with your native Discord instance.
@@ -7,7 +7,7 @@ with your native Discord instance.
 
 Some users have provided distro packages for this library:
 
-* Arch Linux: [`discord-rpc-wine-git`](https://aur.archlinux.org/packages/discord-rpc-wine-git/) by @999eagle
+* Arch Linux: [`discord-rpc-wine-git`](https://aur.archlinux.org/packages/discord-rpc-wine-git/)
 
 If your distro isn't listed above, the library can still
 be installed with a few simple steps.
